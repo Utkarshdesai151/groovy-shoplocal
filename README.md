@@ -17,7 +17,7 @@ A modern **E-Commerce web application** built with **Next.js** that helps users 
 * ⚡ **Built with Next.js** — Fast, SEO-friendly, and scalable frontend architecture.
 
 ---
-###Design system
+##Design system
 
 
 <img width="4320" height="3072" alt="dashboard" src="https://github.com/user-attachments/assets/51d9abf1-53dd-4c85-8a54-47011906b9f8" />
