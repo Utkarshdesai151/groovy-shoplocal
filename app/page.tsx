@@ -1,103 +1,327 @@
-import Image from "next/image";
+"use client"
+import React, { useState, useEffect } from "react";
+import { AuthProvider,useAuth  } from "./context/AuthContext"; 
+import { RewardsProvider } from "./context/RewardsContext";
+import { ErrorBoundary } from "next/dist/client/components/error-boundary";
+import { AuthComponent } from "./components/AuthComponent";
+import { LocationSelector } from "./components/LocationSelector";
+import { ShopListing } from "./components/ShopListing";
+import { ProductCatalog } from "./components/ProductCatalog";
+import { SchedulingComponent } from "./components/SchedulingComponent";
+import { PaymentComponent } from "./components/PaymentComponent";
+import { OrderSuccess } from "./components/OrderSuccess";
+import { MyOrders } from "./components/MyOrders";
+import { AdminPanel } from "./components/AdminPanel";
+import { Navbar } from "./components/Navbar";
+import { SearchComponent } from "./components/SearchComponent";
+import { UserProfile } from "./components/UserProfile";
+import { ShopDetails } from "./components/ShopDetails";
+import { Toaster } from "./components/ui/sonner";
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  isAdmin?: boolean;
+}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+interface Shop {
+  id: string;
+  name: string;
+  category: string;
+  rating: number;
+  deliveryTime: string;
+  distance: string;
+  image: string;
+  isOpen: boolean;
+  featured: boolean;
+  location?: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  description: string;
+  image: string;
+  category: string;
+  inStock: boolean;
+  rating: number;
+  discount?: number;
+  shopId?: string;
+}
+
+interface ScheduleData {
+  product: Product;
+  deliveryType: "delivery" | "pickup";
+  date: string;
+  timeSlot: string;
+  notes: string;
+}
+
+type AppScreen =
+  | "auth"
+  | "location"
+  | "shops"
+  | "shopDetails"
+  | "products"
+  | "schedule"
+  | "payment"
+  | "success"
+  | "orders"
+  | "admin"
+  | "search"
+  | "profile";
+
+function AppContent() {
+  const { user, login, loading } = useAuth();
+  const [currentScreen, setCurrentScreen] =
+    useState<AppScreen>("auth");
+  const [selectedLocation, setSelectedLocation] =
+    useState<string>("");
+  const [selectedShop, setSelectedShop] = useState<Shop | null>(
+    null,
+  );
+  const [selectedProduct, setSelectedProduct] =
+    useState<Product | null>(null);
+  const [scheduleData, setScheduleData] =
+    useState<ScheduleData | null>(null);
+  const [completedOrderId, setCompletedOrderId] =
+    useState<string>("");
+
+  // Update screen when user logs in or auth check completes
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        // User is logged in, navigate to location ONLY if on auth screen
+        if (currentScreen === "auth") {
+          console.log('User logged in, navigating to location');
+          setCurrentScreen("location");
+        }
+      } else {
+        // No user, force to auth screen
+        console.log('No user detected, forcing auth screen');
+        setCurrentScreen("auth");
+      }
+    }
+  }, [user, loading]);
+
+  // Handlers for navigation and state management
+  const handleLogin = (userData: User) => {
+    login(userData);
+    setCurrentScreen("location");
+  };
+
+  const handleNavigate = (screen: string) => {
+    setCurrentScreen(screen as AppScreen);
+  };
+
+  const handleLocationSelect = (location: string) => {
+    setSelectedLocation(location);
+    setCurrentScreen("shops");
+  };
+
+  const handleShopSelect = (shop: Shop) => {
+    setSelectedShop(shop);
+    setCurrentScreen("shopDetails");
+  };
+
+  const handleViewShopProducts = () => {
+    setCurrentScreen("products");
+  };
+
+  const handleProductSchedule = (product: Product) => {
+    setSelectedProduct(product);
+    setCurrentScreen("schedule");
+  };
+
+  const handleScheduleSubmit = (data: ScheduleData) => {
+    setScheduleData(data);
+    setCurrentScreen("payment");
+  };
+
+  const handlePaymentComplete = (orderId: string) => {
+    setCompletedOrderId(orderId);
+    setCurrentScreen("success");
+  };
+
+  const handleStartOver = () => {
+    setSelectedLocation("");
+    setSelectedShop(null);
+    setSelectedProduct(null);
+    setScheduleData(null);
+    setCompletedOrderId("");
+    setCurrentScreen("location");
+  };
+
+  const handleBackToShops = () => {
+    setSelectedShop(null);
+    setSelectedProduct(null);
+    setCurrentScreen("shops");
+  };
+
+  const handleBackToProducts = () => {
+    setSelectedProduct(null);
+    setCurrentScreen("products");
+  };
+
+  const handleBackToSchedule = () => {
+    setCurrentScreen("schedule");
+  };
+
+  const handleLocationChange = () => {
+    setSelectedShop(null);
+    setSelectedProduct(null);
+    setScheduleData(null);
+    setCurrentScreen("location");
+  };
+
+  // Log current state for debugging
+  useEffect(() => {
+    console.log('App State:', { currentScreen, hasUser: !!user, loading });
+  }, [currentScreen, user, loading]);
+
+  // Render based on current screen
+  const renderContent = () => {
+    switch (currentScreen) {
+      case "auth":
+        return <AuthComponent onLogin={handleLogin} />;
+
+      case "location":
+        return (
+          <LocationSelector
+            onLocationSelect={handleLocationSelect}
+          />
+        );
+
+      case "shops":
+        return (
+          <ShopListing
+            location={selectedLocation}
+            onShopSelect={handleShopSelect}
+            onLocationChange={handleLocationChange}
+          />
+        );
+
+      case "shopDetails":
+        return selectedShop ? (
+          <ShopDetails
+            shop={selectedShop}
+            onBack={handleBackToShops}
+            onBrowseProducts={handleViewShopProducts}
+          />
+        ) : null;
+
+      case "products":
+        return selectedShop ? (
+          <ProductCatalog
+            shop={selectedShop}
+            onBack={() => setCurrentScreen("shopDetails")}
+            onScheduleItem={handleProductSchedule}
+          />
+        ) : null;
+
+      case "schedule":
+        return selectedProduct ? (
+          <SchedulingComponent
+            product={selectedProduct}
+            onBack={handleBackToProducts}
+            onProceedToPayment={handleScheduleSubmit}
+          />
+        ) : null;
+
+      case "payment":
+        return scheduleData ? (
+          <PaymentComponent
+            scheduleData={scheduleData}
+            onBack={handleBackToSchedule}
+            onPaymentComplete={handlePaymentComplete}
+          />
+        ) : null;
+
+      case "success":
+        return (
+          <OrderSuccess
+            orderId={completedOrderId}
+            onStartOver={handleStartOver}
+            onTrackOrder={() => setCurrentScreen("orders")}
+          />
+        );
+
+      case "orders":
+        return (
+          <MyOrders
+            onBack={() => setCurrentScreen("shops")}
+          />
+        );
+
+      case "admin":
+        return (
+          <AdminPanel
+            onBack={() => setCurrentScreen("shops")}
+          />
+        );
+
+      case "search":
+        return (
+          <SearchComponent
+            location={selectedLocation}
+            onBack={() => setCurrentScreen("shops")}
+            onShopSelect={handleShopSelect}
+            onProductSelect={handleProductSchedule}
+          />
+        );
+
+      case "profile":
+        return (
+          <UserProfile
+            onBack={() => setCurrentScreen("shops")}
+          />
+        );
+
+      default:
+        return <AuthComponent onLogin={handleLogin} />;
+    }
+  };
+
+  // Show loading screen while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {currentScreen !== "auth" && (
+        <Navbar
+          onNavigate={handleNavigate}
+          currentLocation={selectedLocation}
+          showLocationChange={currentScreen === "shops"}
+          onLocationChange={handleLocationChange}
+        />
+      )}
+      {renderContent()}
+      <Toaster />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <RewardsProvider>
+          <AppContent />
+        </RewardsProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
