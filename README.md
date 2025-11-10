@@ -20,10 +20,6 @@ A modern **E-Commerce web application** built with **Next.js** that helps users 
 ##Design system
 
 
-<img width="4320" height="3072" alt="dashboard" src="https://github.com/user-attachments/assets/51d9abf1-53dd-4c85-8a54-47011906b9f8" />
-
-<img width="1440" height="1024" alt="timeline" src="https://github.com/user-attachments/assets/50d67e69-b56c-4f32-b782-1075d5929127" />
-
 
 ## 🧑‍💻 Getting Started
 
